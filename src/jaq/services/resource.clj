@@ -25,3 +25,6 @@
   (action :post [:projects] {:body (json/write-str {:projectId project-id
                                                     :name name})
                              :content-type :json}))
+
+(defn operation [name]
+  (action :get [name]))
