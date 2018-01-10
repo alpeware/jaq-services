@@ -29,6 +29,19 @@ Alpha quality with some API changes expected.
 - Resource Manager
 - Service Management
 
+## Runtime Dependencies
+
+See profile ```dev``` in ```project.clj``` -
+
+``` clojure
+  :profiles {:dev {:dependencies [[com.google.appengine/appengine-java-sdk ~sdk-version :extension "zip"]
+                                  [com.google.appengine/appengine-api-1.0-sdk ~sdk-version]
+                                  [com.google.appengine/appengine-api-labs ~sdk-version]
+                                  [com.google.appengine/appengine-remote-api ~sdk-version]
+                                  [com.google.appengine/appengine-tools-sdk ~sdk-version]]}}
+
+```
+
 ## License
 
 Copyright © 2017 Alpeware, LLC.
