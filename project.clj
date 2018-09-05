@@ -1,4 +1,4 @@
-(def sdk-version "1.9.60")
+(def sdk-version "1.9.64")
 
 (defproject com.alpeware/jaq-services "0.1.0-SNAPSHOT"
   :description "JAQ - Bringing Clojure to Google App Engine"

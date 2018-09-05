@@ -16,7 +16,7 @@
   <scm>
     <connection>scm:git:git://github.com/alpeware/jaq-services.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/alpeware/jaq-services.git</developerConnection>
-    <tag>1c0b52e29bb63b04af8c0fd4ca551e57a796ff07
+    <tag>edd8bfc660ade5929d1cde77ac8a538d9ff8b408
 </tag>
     <url>https://github.com/alpeware/jaq-services</url>
   </scm>
@@ -71,7 +71,7 @@
     <dependency>
       <groupId>com.google.appengine</groupId>
       <artifactId>appengine-api-1.0-sdk</artifactId>
-      <version>1.9.60</version>
+      <version>1.9.64</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -97,26 +97,26 @@
     <dependency>
       <groupId>com.google.appengine</groupId>
       <artifactId>appengine-java-sdk</artifactId>
-      <version>1.9.60</version>
+      <version>1.9.64</version>
       <type>zip</type>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>com.google.appengine</groupId>
       <artifactId>appengine-api-labs</artifactId>
-      <version>1.9.60</version>
+      <version>1.9.64</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>com.google.appengine</groupId>
       <artifactId>appengine-remote-api</artifactId>
-      <version>1.9.60</version>
+      <version>1.9.64</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>com.google.appengine</groupId>
       <artifactId>appengine-tools-sdk</artifactId>
-      <version>1.9.60</version>
+      <version>1.9.64</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
