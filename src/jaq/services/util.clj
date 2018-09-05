@@ -2,21 +2,27 @@
   (:require
    [clojure.data.json :as json]
    [clojure.string :as string]
+   [clojure.repl :refer [demunge]]
    [clj-http.lite.client :as http]
-   [jaq.services.auth :as auth])
+   [jaq.services.auth :as auth]
+   [taoensso.timbre :as timbre
+    :refer [log  trace  debug  info  warn  error  fatal  report]])
   (:import
    [com.google.appengine.tools KickStart]
    [com.google.appengine.tools.development DevAppServerMain]
    [com.google.appengine.api.utils SystemProperty]
    [com.google.appengine.tools.remoteapi
     RemoteApiInstaller
-    RemoteApiOptions]))
+    RemoteApiOptions]
+   [java.net URLEncoder]))
 
 
 ;;; TODO(alpeware): need different credential stores
-(def credentials
+(def ^:dynamic *throw-exceptions* false)
+(def ^:dynamic *credentials-file* ".credentials")
+(def ^:dynamic credentials
   (atom
-   (auth/load-credentials ".credentials")))
+   (auth/load-credentials *credentials-file*)))
 
 (defn get-token []
   (->> @credentials
@@ -61,7 +67,7 @@
      (http/request
       (merge {:method verb
               :url url
-              ;;:throw-exceptions false
+              :throw-exceptions *throw-exceptions*
               :headers headers}
              (dissoc opts :headers)))
      raw)))
@@ -103,3 +109,21 @@
 ;;;
 (defn sleep [& [ms]]
   (Thread/sleep (or ms 1000)))
+
+(defn fn->str [f]
+  (when f
+    (-> f
+        (str)
+        (demunge)
+        (string/split #"@")
+        (first))))
+
+(defn call-fn [s & [args]]
+  (when s
+    (-> s
+        ((fn [e] (str "(apply " e " " (or args []) ")")))
+        (read-string)
+        (eval))))
+
+(defn url-encode [s]
+  (URLEncoder/encode s "UTF-8"))

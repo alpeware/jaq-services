@@ -12,6 +12,7 @@
    [jaq.services.deferred :refer [defer defer-fn]]
    [jaq.services.util :as util])
   (:import
+   [java.io File]
    [com.google.appengine.api.appidentity
     AppIdentityServiceFactory
     AppIdentityService]))
@@ -43,12 +44,12 @@
 
 ;; objects
 (defn put-simple [bucket file-name content-type content]
-  (action :post [:b bucket :o]
-          {:content-type content-type
-           :query-params {:uploadType "media"
-                          :name file-name}
-           :body content}
-          [endpoint :upload :storage version]))
+  (util/action [endpoint :upload :storage version]
+               :post [:b bucket :o]
+               {:content-type content-type
+                :query-params {:uploadType "media"
+                               :name file-name}
+                :body content}))
 
 (defn create-session-uri [bucket path base-dir prefix]
   (let [file (io/file path)
@@ -89,22 +90,26 @@
                 (walk/keywordize-keys))]
       resp)))
 
-(defmethod defer-fn ::upload [{:keys [session-uri path file-size index chunk-size] :as params}]
+(defmethod defer-fn ::upload [{:keys [session-uri path file-size index chunk-size
+                                      callback-fn callback-args] :as params}]
   (let [resp (upload-chunk session-uri path file-size index chunk-size)
         offset (-> resp :headers :range (or "-0") (string/split #"-") last edn/read-string inc)
         status (:status resp)]
     (cond
-      (= status 200) (-> resp :body (json/read-str))
+      (= status 200) (let [response (-> resp :body (json/read-str))
+                           args (merge {:response response} params)]
+                       (util/call-fn callback-fn args))
       (= status 308) (defer (merge params {:fn ::upload :index offset}))
       :else (throw (IllegalStateException. (str "Re-trying chunk upload" index path))))))
 
-(defn put-large [bucket path base-dir prefix]
+(defn put-large [bucket path base-dir prefix & [{:keys [callback args]}]]
   (let [session-uri (create-session-uri bucket path base-dir prefix)
         chunk-size (* 256 1024)
         file-size (-> (io/file path) .length)
-        chunks (-> (/ file-size 100) int inc)]
+        chunks (-> (/ file-size 100) int inc)
+        callback-fn (util/fn->str callback)]
     (defer {:fn ::upload :session-uri session-uri :path path :file-size file-size :index 0
-            :chunk-size chunk-size})
+            :chunk-size chunk-size :callback-fn callback-fn :callback-args args})
     path))
 
 (defn list [bucket & [{:keys [prefix pageToken maxResults] :as params}]]
@@ -119,9 +124,18 @@
                      (objects bucket (assoc params :pageToken next-token)))))))
 
 (defn get-file [bucket file-name]
-  (action :get [:b bucket :o file-name] {:query-params {:alt "media"}}))
+  (let [file-path (util/url-encode file-name)]
+    (action :get [:b bucket :o file-path] {:query-params {:alt "media"}})))
 
 ;; helper
+(def file-counter (atom 0))
+
+(defn file-upload-done [& args]
+  (swap! file-counter dec))
+
+(defn file-upload-start []
+  (swap! file-counter inc))
+
 (defn copy [src-dir bucket prefix]
   (let [dir (->> (string/split src-dir #"/") (interpose "/") (string/join))]
     (->> (file-seq (io/file dir))
@@ -130,8 +144,22 @@
                 (let [path (.getPath f)
                       relative (string/replace path (str dir "/") "")
                       file-name (string/replace path dir prefix)]
-                  (put-large bucket path dir prefix))))
+                  (file-upload-start)
+                  (put-large bucket path dir prefix {:callback file-upload-done}))))
          (doall))))
+
+(defn get-files [bucket prefix dest-dir]
+  (->> (objects bucket {:prefix prefix})
+       (map :name)
+       (map (fn [file-name]
+              (let [dest-path (->> (string/split file-name #"/")
+                                   (into (string/split dest-dir (re-pattern File/separator)))
+                                   (string/join File/separator))]
+                (io/make-parents dest-path)
+                (->> (get-file bucket file-name)
+                     (spit dest-path))
+                dest-path)))
+       (doall)))
 
 ;;;;; used outside app engine
 

@@ -2,7 +2,6 @@
   (:refer-clojure :exclude [list])
   (:require
    [clojure.data.json :as json]
-   [clojure.data.xml :as xml]
    [clojure.tools.logging :as log]
    [clojure.java.io :as io]
    [clj-http.lite.client :as http]
