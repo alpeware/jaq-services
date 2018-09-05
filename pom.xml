@@ -16,7 +16,7 @@
   <scm>
     <connection>scm:git:git://github.com/alpeware/jaq-services.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/alpeware/jaq-services.git</developerConnection>
-    <tag>edd8bfc660ade5929d1cde77ac8a538d9ff8b408
+    <tag>dea03320b49f7c325f75fb790fe41ebd71584dac
 </tag>
     <url>https://github.com/alpeware/jaq-services</url>
   </scm>
@@ -69,12 +69,6 @@
       <version>1.9.0</version>
     </dependency>
     <dependency>
-      <groupId>com.google.appengine</groupId>
-      <artifactId>appengine-api-1.0-sdk</artifactId>
-      <version>1.9.64</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>org.clojure</groupId>
       <artifactId>data.json</artifactId>
       <version>0.2.6</version>
@@ -93,31 +87,6 @@
       <groupId>com.cognitect</groupId>
       <artifactId>transit-clj</artifactId>
       <version>0.8.300</version>
-    </dependency>
-    <dependency>
-      <groupId>com.google.appengine</groupId>
-      <artifactId>appengine-java-sdk</artifactId>
-      <version>1.9.64</version>
-      <type>zip</type>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.google.appengine</groupId>
-      <artifactId>appengine-api-labs</artifactId>
-      <version>1.9.64</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.google.appengine</groupId>
-      <artifactId>appengine-remote-api</artifactId>
-      <version>1.9.64</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.google.appengine</groupId>
-      <artifactId>appengine-tools-sdk</artifactId>
-      <version>1.9.64</version>
-      <scope>test</scope>
     </dependency>
   </dependencies>
 </project>
