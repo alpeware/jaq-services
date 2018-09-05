@@ -16,7 +16,7 @@
   <scm>
     <connection>scm:git:git://github.com/alpeware/jaq-services.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/alpeware/jaq-services.git</developerConnection>
-    <tag>edd8bfc660ade5929d1cde77ac8a538d9ff8b408
+    <tag>338e4af0c1f5062d70117771b156e7c06120b6de
 </tag>
     <url>https://github.com/alpeware/jaq-services</url>
   </scm>
