@@ -5,8 +5,7 @@
    [clojure.repl :refer [demunge]]
    [clj-http.lite.client :as http]
    [jaq.services.auth :as auth]
-   [taoensso.timbre :as timbre
-    :refer [log  trace  debug  info  warn  error  fatal  report]])
+   [clojure.tools.logging :as log])
   (:import
    [com.google.appengine.tools KickStart]
    [com.google.appengine.tools.development DevAppServerMain]
