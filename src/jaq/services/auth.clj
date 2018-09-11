@@ -27,7 +27,9 @@
   (str (URLEncoder/encode (str key) "UTF-8") "=" (URLEncoder/encode (str val) "UTF-8")))
 
 (defn valid? [{:keys [expires-in]}]
-  (< (System/currentTimeMillis) expires-in))
+  (try
+    (< (System/currentTimeMillis) expires-in)
+    (catch NullPointerException _ false)))
 
 (defn to-underscore [s]
   (clojure.string/replace s #"-" "_"))
@@ -104,9 +106,14 @@
             :expires-in (+ (System/currentTimeMillis) (* (resp :expires_in) 1000))})))
 
 (defn get-valid-credentials [credentials]
-  (if (valid? credentials)
-    credentials
-    (refresh-token credentials)))
+  (cond
+    (valid? credentials) credentials
+    (:refresh-token credentials) (refresh-token credentials)
+    :else (->> (com.google.appengine.api.appidentity.AppIdentityServiceFactory/getAppIdentityService)
+         ((fn [e] (.getAccessToken e jaq.services.auth/cloud-scopes)))
+         ((fn [e]
+            {:access-token (.getAccessToken e)
+             :expires-in (-> e (.getExpirationTime) (.getTime))})))))
 
 (defn local-credentials [path]
   (let [credentials (or (load-credentials path)

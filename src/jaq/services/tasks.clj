@@ -61,6 +61,10 @@
      (concat items (when next-token
                      (objects bucket (assoc params :pageToken next-token)))))))
 #_(
+   *ns*
+   (in-ns 'jaq.runtime)
+   (require 'jaq.services.tasks :reload)
+   (in-ns 'jaq.services.tasks)
    (jaq.services.tasks/locations "alpeware-jaq-runtime")
    (location "alpeware-jaq-runtime" "us-central1")
    (queues "alpeware-jaq-runtime" "us-central1")
@@ -73,9 +77,9 @@
 
    (->> )
    (->> (queue "alpeware-jaq-runtime" "us-central1" "default")
-        ((fn [e] (merge e {:rateLimits {:maxTasksDispatchedPerSecond 3
+        ((fn [e] (merge e {:rateLimits {:maxTasksDispatchedPerSecond 1
                                         :maxBurstSize 3
-                                        :maxConcurrentTasks 3}})))
+                                        :maxConcurrentTasks 1}})))
         (patch-queue "alpeware-jaq-runtime" "us-central1" "default"))
 
    )
