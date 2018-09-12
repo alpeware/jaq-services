@@ -117,12 +117,31 @@
         (string/split #"@")
         (first))))
 
-(defn call-fn [s & [args]]
+(defn call-fn [s & args]
   (when s
     (-> s
-        ((fn [e] (str "(apply " e " " (or args []) ")")))
+        #_((fn [e] (str "(" e " " (or args []) ")")))
         (read-string)
-        (eval))))
+        (eval)
+        (apply args))))
+
+#_(
+   (in-ns 'jaq.services.util)
+
+   (defn foo [f]
+     f
+     #_(clojure.edn/read-string f))
+
+   (-> foo
+       (fn->str)
+       (call-fn (pr-str {:foo 'jaq.bar})))
+
+   (-> "jaq.services.util/foo"
+       (read-string)
+       (eval)
+       (apply ['jaq.bar]))
+
+   )
 
 (defn url-encode [s]
   (URLEncoder/encode s "UTF-8"))

@@ -92,7 +92,7 @@
     (log/info exp)))
 
 (defmethod defer-fn :default [{:keys [fn]}]
-  (log/error "Unknown deferred fn:" fn))
+  (throw (IllegalArgumentException. (str "Unknown deferred fn: " fn))))
 
 (defn -run [this]
   (let [state (.state this)]
