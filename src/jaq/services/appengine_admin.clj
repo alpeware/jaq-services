@@ -47,9 +47,9 @@
 (defn locations [project-id]
   (action :get [:apps project-id :locations]))
 
-(defn deploy [project-id app-map]
+(defn deploy [project-id service app-map]
   (action :post
-          [:apps project-id :services :default :versions]
+          [:apps project-id :services service :versions]
           {:content-type :json
            :body (json/write-str app-map)}))
 
@@ -68,29 +68,6 @@
   (action :delete [:apps project-id :services :default :versions version]))
 
 ;; helpers
-(defn different-keys? [content]
-  (when content
-    (let [dkeys (count (filter identity (distinct (map :tag content))))
-          n (count content)]
-      (= dkeys n))))
-
-(defn xml->json [element]
-  (cond
-    (nil? element) nil
-    (string? element) element
-    (sequential? element) (if (> (count element) 1)
-                            (if (different-keys? element)
-                              (reduce into {} (map (partial xml->json ) element))
-                              (map xml->json element))
-                            (xml->json  (first element)))
-    (and (map? element) (empty? element)) {}
-    (map? element) (if (:attrs element)
-                     #_{(:tag element) (xml->json (:content element))
-                        (keyword (str (name (:tag element)) "Attrs")) (:attrs element)}
-                     {(:tag element) (xml->json  (:content element))}
-                     {(:tag element) (xml->json  (:content element))})
-    :else nil))
-
 (defn deployment [file-vec]
   {:deployment
    {:files
@@ -118,31 +95,35 @@
                       :maxIdleInstances 1
                       :maxPendingLatency "15s"
                       :minIdleInstances 0
-                      :minPendingLatency "10s"}
-   :handlers [{:urlRegex "/.*"
+                      :minPendingLatency "10s"}})
+
+(defn service-defaults [version servlet]
+  {:id version
+   :runtime "java8"
+   :threadsafe true
+   :basicScaling {:maxInstances 1}
+   :instanceClass "B1"})
+
+(defn app-handlers [file-vec servlet]
+  {:handlers [{:urlRegex "/public/.*"
+               :staticFiles {:path "WEB-INF/classes/public/\1"
+                             :uploadPathRegex "WEB-INF/classes/public/.*"
+                             :requireMatchingFile false
+                             :applicationReadable true}}
+              {:urlRegex "/.*"
                :script {:scriptPath servlet}}]})
 
-(defn app-definition [file-vec version servlet]
+(defn app-definition [service file-vec version servlet]
   (let [dep (deployment file-vec)
-        defaults (app-defaults version servlet)
-        #_app-json #_(-> appengine-web
-                         (xml/parse-str)
-                         (xml->json)
-                         :appengine-web-app
-                         (select-keys [:application :runtime :version :threadsafe :automatic-scaling])
-                         )]
-    (merge
-     defaults
-     #_(into
-        {}
-        (map (fn [[k v]]
-               [(get {:application :name
-                      :version :id} k k) v])
-             app-json))
-     dep)))
+        defaults (if (= service :default)
+                   (app-defaults version servlet)
+                   (service-defaults version servlet))
+        handlers (app-handlers file-vec servlet)]
+    (merge defaults dep handlers)))
 
-;; TODO(alpeware): call as deferred
-(defn deploy-app [project-id bucket prefix version servlet]
-  (let [;;file-vec (storage/copy dir bucket prefix)
-        file-vec (get-files bucket prefix)]
-    (deploy project-id (app-definition file-vec version servlet))))
+;; TODO: add service
+(defn deploy-app [project-id service bucket prefix version servlet]
+  (let [file-vec (get-files bucket prefix)
+        app-def (app-definition service file-vec version servlet)]
+    (log/info app-def)
+    (deploy project-id service app-def)))

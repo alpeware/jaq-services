@@ -61,15 +61,13 @@
   "
   [base verb path & [opts raw]]
   (let [url (make-url (substitute path base))
-        headers (merge {"Authorization" (str "Bearer " (get-token))} (:headers opts))]
-    (get-response
-     (http/request
-      (merge {:method verb
-              :url url
-              :throw-exceptions *throw-exceptions*
-              :headers headers}
-             (dissoc opts :headers)))
-     raw)))
+        headers (merge {"Authorization" (str "Bearer " (get-token))} (:headers opts))
+        req (merge {:method verb
+                    :url url
+                    :throw-exceptions *throw-exceptions*
+                    :headers headers}
+                   (dissoc opts :headers))]
+    (get-response (http/request req) raw)))
 
 ;;;;;;;;;;;;;
 
