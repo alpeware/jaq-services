@@ -56,16 +56,18 @@
 (defn operation [name]
   (action :get [name]))
 
-(defn migrate [project-id version]
+(defn migrate [project-id service version]
   (action :post
-          [:apps project-id :services :default]
+          [:apps project-id :services service]
           {:headers {"X-HTTP-Method-Override" "PATCH"} ;; https://stackoverflow.com/a/32503192/7947020
            :content-type :json
            :query-params {:updateMask "split"}
            :body (json/write-str {:split {:allocations {version "1"}}})}))
 
-(defn delete [project-id version]
-  (action :delete [:apps project-id :services :default :versions version]))
+(defn delete [project-id service & [version]]
+  (if (some? version)
+    (action :delete [:apps project-id :services service :versions version])
+    (action :delete [:apps project-id :services service])))
 
 ;; helpers
 (defn deployment [file-vec]
@@ -121,7 +123,6 @@
         handlers (app-handlers file-vec servlet)]
     (merge defaults dep handlers)))
 
-;; TODO: add service
 (defn deploy-app [project-id service bucket prefix version servlet]
   (let [file-vec (get-files bucket prefix)
         app-def (app-definition service file-vec version servlet)]
