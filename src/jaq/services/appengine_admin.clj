@@ -107,13 +107,24 @@
    :instanceClass "B1"})
 
 (defn app-handlers [file-vec servlet]
-  {:handlers [{:urlRegex "/public/.*"
-               :staticFiles {:path "WEB-INF/classes/public/\1"
-                             :uploadPathRegex "WEB-INF/classes/public/.*"
-                             :requireMatchingFile false
-                             :applicationReadable true}}
+  {:handlers [{:urlRegex "/"
+               :staticFiles {:path "WEB-INF/classes/public/index.html"
+                             :uploadPathRegex "WEB-INF/classes/public/(.*)"
+                             :applicationReadable false}}
+              {:urlRegex "/favicon.ico"
+               :staticFiles {:path "WEB-INF/classes/public/favicon.ico"
+                             :uploadPathRegex "WEB-INF/classes/public/(.*)"
+                             :applicationReadable false}}
+              {:urlRegex "/public/(.*)"
+               :staticFiles {:path "WEB-INF/classes/public/\\1"
+                             :uploadPathRegex "WEB-INF/classes/public/(.*)"
+                             :applicationReadable false}}
               {:urlRegex "/.*"
                :script {:scriptPath servlet}}]})
+
+#_(
+   (in-ns 'jaq.services.appengine-admin)
+   )
 
 (defn app-definition [service file-vec version servlet]
   (let [dep (deployment file-vec)
