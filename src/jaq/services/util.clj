@@ -25,9 +25,9 @@
 
 (defn get-token []
   (->> @credentials
-      (auth/get-valid-credentials)
-      (reset! credentials)
-      :access-token))
+       (auth/get-valid-credentials)
+       (reset! credentials)
+       :access-token))
 ;;;
 
 (defn substitute [path base]
@@ -87,6 +87,11 @@
 
 (defn sdk-version []
   (property-or SystemProperty/version "Google App Engine/1.x.x"))
+
+(def env
+  (->> (System/getenv)
+       (into {})
+       (clojure.walk/keywordize-keys)))
 
 (defn remote! [host port]
   (-> (RemoteApiInstaller.)

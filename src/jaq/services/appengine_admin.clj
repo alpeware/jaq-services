@@ -123,19 +123,22 @@
                :script {:scriptPath servlet}}]})
 
 #_(
+   *ns*
    (in-ns 'jaq.services.appengine-admin)
    )
 
-(defn app-definition [service file-vec version servlet]
+(defn app-definition [{:keys [service file-vec version servlet env-vars]
+                       :or {servlet "servlet"}}]
   (let [dep (deployment file-vec)
         defaults (if (= service :default)
                    (app-defaults version servlet)
                    (service-defaults version servlet))
-        handlers (app-handlers file-vec servlet)]
-    (merge defaults dep handlers)))
+        handlers (app-handlers file-vec servlet)
+        env-variables {"envVariables" env-vars}]
+    (merge defaults dep handlers env-variables)))
 
-(defn deploy-app [project-id service bucket prefix version servlet]
+(defn deploy-app [{:keys [project-id service bucket prefix version servlet
+                          env-vars] :as params}]
   (let [file-vec (get-files bucket prefix)
-        app-def (app-definition service file-vec version servlet)]
-    (log/info app-def)
+        app-def (app-definition params)]
     (deploy project-id service app-def)))
