@@ -125,10 +125,17 @@
 #_(
    *ns*
    (in-ns 'jaq.services.appengine-admin)
+
+   (let [code-bucket "staging.alpeware-jaq-runtime.appspot.com"
+         code-prefix "apps/v33"]
+     (->> (get-files code-bucket code-prefix)
+          (count)))
    )
 
-(defn app-definition [{:keys [service file-vec version servlet env-vars]
-                       :or {servlet "servlet"}}]
+(defn app-definition [file-vec
+                      {:keys [service version servlet env-vars]
+                       :or {servlet "servlet"
+                            env-vars {}}}]
   (let [dep (deployment file-vec)
         defaults (if (= service :default)
                    (app-defaults version servlet)
@@ -137,8 +144,8 @@
         env-variables {"envVariables" env-vars}]
     (merge defaults dep handlers env-variables)))
 
-(defn deploy-app [{:keys [project-id service bucket prefix version servlet
+(defn deploy-app [{:keys [project-id service code-bucket code-prefix version servlet
                           env-vars] :as params}]
-  (let [file-vec (get-files bucket prefix)
-        app-def (app-definition params)]
+  (let [file-vec (get-files code-bucket code-prefix)
+        app-def (app-definition file-vec params)]
     (deploy project-id service app-def)))
