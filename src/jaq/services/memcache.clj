@@ -4,7 +4,6 @@
    [cognitect.transit :refer [writer write reader read]])
   (:import
    [java.io ByteArrayInputStream ByteArrayOutputStream]
-   [java.util Base64]
    [com.google.appengine.api.memcache
     MemcacheService
     MemcacheServiceFactory]))
@@ -52,10 +51,3 @@
         keys (if (vector? ks) ks [ks])
         m (.getAll ms keys)]
     (into {} (for [[k v] m] [k (read-str v)]))))
-
-
-(defn encode [s]
-  (.encodeToString (java.util.Base64/getEncoder) (.getBytes s)))
-
-(defn decode [s]
-  (String. (.decode (Base64/getDecoder) s)))

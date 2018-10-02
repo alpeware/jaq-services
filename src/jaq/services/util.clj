@@ -13,7 +13,8 @@
    [com.google.appengine.tools.remoteapi
     RemoteApiInstaller
     RemoteApiOptions]
-   [java.net URLEncoder]))
+   [java.net URLEncoder]
+   [java.util Base64]))
 
 
 ;;; TODO(alpeware): need different credential stores
@@ -148,3 +149,9 @@
 
 (defn url-encode [s]
   (URLEncoder/encode s "UTF-8"))
+
+(defn encode [s]
+  (.encodeToString (java.util.Base64/getEncoder) (.getBytes s)))
+
+(defn decode [s]
+  (String. (.decode (Base64/getDecoder) s)))

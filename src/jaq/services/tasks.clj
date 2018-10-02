@@ -45,6 +45,14 @@
 (defn resume-queue [project-id location-id queue-id]
   (action :post [:projects project-id :locations location-id :queues (str queue-id ":resume")]))
 
+(defn create-pull-queue [project-id location-id queue-name]
+  (action :post [:projects project-id :locations location-id :queues]
+          {:content-type :json
+           :body (json/write-str {:name (->> [:projects project-id :locations location-id :queues queue-name]
+                                             (map name)
+                                             (clojure.string/join "/"))
+                                  :pullTarget {}})}))
+
 (defn tasks [project-id location-id queue-id & [{:keys [pageToken pageSize] :as params}]]
   (lazy-seq
    (let [result (action :get [:projects project-id :locations location-id :queues queue-id :tasks]
@@ -53,13 +61,8 @@
      (concat (:tasks result) (when next-token
                                 (tasks project-id location-id queue-id (assoc params :pageToken next-token)))))))
 
-(defn objects [bucket & [{:keys [prefix pageToken maxResults] :as params}]]
-  (lazy-seq
-   (let [files (list bucket params)
-         next-token (:nextPageToken files)
-         items (:items files)]
-     (concat items (when next-token
-                     (objects bucket (assoc params :pageToken next-token)))))))
+
+
 #_(
    *ns*
    (in-ns 'jaq.runtime)
@@ -72,7 +75,9 @@
    (purge-queue "alpeware-jaq-runtime" "us-central1" "default")
    (resume-queue "alpeware-jaq-runtime" "us-central1" "default")
 
-   (->> (tasks "alpeware-jaq-runtime" "us-central1" "default")
+   (create-queue "alpeware-jaq-runtime" "us-central1" "pull")
+
+   (->> (tasks "alpeware-jaq-runtime" "us-central1" "pull")
         count)
 
    (->> )
@@ -81,5 +86,11 @@
                                         :maxBurstSize 3
                                         :maxConcurrentTasks 1}})))
         (patch-queue "alpeware-jaq-runtime" "us-central1" "default"))
+
+   (->> [:foo :bar]
+        (interleave (repeatedly (constantly "/")))
+        (map name)
+        (clojure.string/join))
+
 
    )
