@@ -109,11 +109,19 @@
   (cond
     (valid? credentials) credentials
     (:refresh-token credentials) (refresh-token credentials)
-    :else (->> (com.google.appengine.api.appidentity.AppIdentityServiceFactory/getAppIdentityService)
-         ((fn [e] (.getAccessToken e jaq.services.auth/cloud-scopes)))
-         ((fn [e]
-            {:access-token (.getAccessToken e)
-             :expires-in (-> e (.getExpirationTime) (.getTime))})))))
+    :else (or (try
+                (->> (com.google.appengine.api.appidentity.AppIdentityServiceFactory/getAppIdentityService)
+                       ((fn [e] (.getAccessToken e jaq.services.auth/cloud-scopes)))
+                       ((fn [e]
+                          {:access-token (.getAccessToken e)
+                           :expires-in (-> e (.getExpirationTime) (.getTime))})))
+                (catch Exception _ nil))
+              (try
+                (->> (com.google.auth.oauth2.ComputeEngineCredentials/create)
+                     (.refreshAccessToken)
+                     ((fn [e] {:access-token (.getTokenValue e)
+                               :expires-in (-> e (.getExpirationTime) (.getTime))})))
+                (catch Exception _ nil)))))
 
 (defn local-credentials [path]
   (let [credentials (or (load-credentials path)
@@ -125,3 +133,8 @@
             _ (println enter-code-message)
             code (read-line)]
         (save-credentials path (exchange-token credentials code))))))
+
+#_(
+   (in-ns 'jaq.services.auth)
+
+   )

@@ -7,12 +7,6 @@
    [jaq.services.auth :as auth]
    [clojure.tools.logging :as log])
   (:import
-   [com.google.appengine.tools KickStart]
-   [com.google.appengine.tools.development DevAppServerMain]
-   [com.google.appengine.api.utils SystemProperty]
-   [com.google.appengine.tools.remoteapi
-    RemoteApiInstaller
-    RemoteApiOptions]
    [java.net URLEncoder]
    [java.util Base64]))
 
@@ -76,7 +70,7 @@
   (or (.get property) alternative))
 
 (defn environment []
-  (property-or SystemProperty/environment "Development"))
+  (property-or com.google.appengine.api.utils.SystemProperty/environment "Development"))
 
 (def prod?
   (not= (environment) "Development"))
@@ -84,10 +78,10 @@
 (def dev? (not prod?))
 
 (defn application-id []
-  (property-or SystemProperty/applicationId "localhost"))
+  (property-or com.google.appengine.api.utils.SystemProperty/applicationId "localhost"))
 
 (defn sdk-version []
-  (property-or SystemProperty/version "Google App Engine/1.x.x"))
+  (property-or com.google.appengine.api.utils.SystemProperty/version "Google App Engine/1.x.x"))
 
 (def env
   (->> (System/getenv)
@@ -95,10 +89,12 @@
        (clojure.walk/keywordize-keys)))
 
 (defn remote! [host port]
-  (-> (RemoteApiInstaller.)
-      (.install (-> (RemoteApiOptions.)
-                    (.server host port)
-                    (.useDevelopmentServerCredential)))))
+  (try
+    (-> (com.google.appengine.tools.remoteapi.RemoteApiInstaller.)
+        (.install (-> (com.google.appengine.tools.remoteapi.RemoteApiOptions.)
+                      (.server host port)
+                      (.useDevelopmentServerCredential))))
+    (catch Exception _ nil)))
 
 (defn repl-server []
   (clojure.core.server/start-server
@@ -131,6 +127,23 @@
 
 #_(
    (in-ns 'jaq.services.util)
+   @credentials
+
+   (-> env
+       (merge {:DEFAULT_BUCKET (->> (jaq.services.storage/buckets "alpeware-jaq-runtime")
+                                    :items
+                                    (map :name)
+                                    first)})
+       ((fn [e] (def env e))))
+
+   (->> (jaq.services.storage/buckets "alpeware-jaq-runtime")
+        :items
+        (map :name))
+
+   (->> (com.google.auth.oauth2.ComputeEngineCredentials/create)
+        (.refreshAccessToken)
+        ((fn [e] {:access-token (.getTokenValue e) :expires-in (-> e (.getExpirationTime) (.getTime))}))
+        (reset! jaq.services.util/credentials))
 
    (defn foo [f]
      f
@@ -145,6 +158,7 @@
        (eval)
        (apply ['jaq.bar]))
 
+   (url-encode "foo/bar")
    )
 
 (defn url-encode [s]

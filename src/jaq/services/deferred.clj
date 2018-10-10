@@ -37,6 +37,7 @@
        (-> q#
            (.add (TaskOptions$Builder/withPayload (jaq.services.deferred.Defer. ~body)))))))
 
+;;;TODO(alpeware): make this work outside app engine
 (defn defer [m & [{:keys [delay-ms]
                    :or {delay-ms 0}}]]
   (if (> delay-ms 0)
@@ -46,6 +47,14 @@
                (.etaMillis (+ (System/currentTimeMillis) delay-ms)))))
     (-> (push-queue)
         (.add (TaskOptions$Builder/withPayload (jaq.services.deferred.Defer. m))))))
+
+#_(
+   (in-ns 'jaq.services.deferred)
+   (defn defer [m & [{:keys [delay-ms]
+                      :or {delay-ms 0}}]]
+     (Thread/sleep delay-ms)
+     (defer-fn m))
+   )
 
 (defn pull-queue []
   (QueueFactory/getQueue "pull"))
@@ -65,6 +74,36 @@
   (if tag
     (.leaseTasksByTag (pull-queue) lease unit countLimit tag)
     (.leaseTasks (pull-queue) lease unit countLimit)))
+
+#_(
+   (in-ns 'jaq.services.deferred)
+
+   (def pq (atom {}))
+
+   @pq
+
+   (defn add [payload tag]
+     (swap! pq update tag (fn [e] (-> (or e []) (conj payload)))))
+
+   (add :payload :tag)
+
+   (defn lease [{:keys [tag lease unit countLimit]
+                 :or {lease 120 ;; 2min
+                      unit TimeUnit/SECONDS
+                      countLimit 100}}]
+     (let [tasks (get @pq tag)]
+       (swap! pq assoc tag nil)
+       tasks))
+
+   (lease {:tag :tag})
+
+   (defn process [tasks]
+     tasks)
+
+   (defn delete [tasks]
+     nil)
+
+   )
 
 (defn deserialize [payload]
   (with-open [ba (ByteArrayInputStream. payload)

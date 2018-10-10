@@ -24,9 +24,22 @@
 
 (def extra-mime-types {"mf" "text/plain"})
 
+;;;TODO(alpeware): does only work in app engine
 (defn default-bucket []
   (let [app-id-service (AppIdentityServiceFactory/getAppIdentityService)]
     (.getDefaultGcsBucketName app-id-service)))
+
+#_(
+   (in-ns 'jaq.services.storage)
+   (defn default-bucket []
+     "alpeware-jaq-runtime.appspot.com"
+     #_(:DEFAULT_BUCKET util/env))
+   (default-bucket)
+
+   (get-file (default-bucket) "jaq-config.edn")
+   (buckets "alpeware-jaq-runtime")
+
+   )
 
 ;; buckets
 (defn buckets [project]

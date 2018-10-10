@@ -410,13 +410,13 @@
 (defn create-store [name & {:keys [key-keyword key-fn version-keyword version-default version-max version-key-fn version-set-fn version-fn cull-fn]
                             :or {key-keyword :id
                                  version-keyword :v
-                                 key-fn key-keyword
-                                 version-key-fn version-keyword
+                                 key-fn :id
+                                 version-key-fn :v
                                  version-default 1
-                                 version-set-fn (fn [m version] (assoc m version-keyword version))
-                                 version-fn (fn [m] (assoc m version-keyword (inc (version-key-fn m))))
+                                 version-set-fn (fn [m version] (assoc m :v version))
+                                 version-fn (fn [m] (assoc m :v (inc (:v m))))
                                  version-max 30
-                                 cull-fn (fn [cnt] (> cnt version-max))}}]
+                                 cull-fn (fn [cnt] (> cnt 30))}}]
   (let [dss (DatastoreServiceFactory/getDatastoreService)]
     {:dss dss
      :name (propertify nil name)
