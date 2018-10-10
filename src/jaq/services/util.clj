@@ -88,7 +88,7 @@
        (into {})
        (clojure.walk/keywordize-keys)))
 
-(defn remote! [host port]
+#_(defn remote! [host port]
   (try
     (-> (com.google.appengine.tools.remoteapi.RemoteApiInstaller.)
         (.install (-> (com.google.appengine.tools.remoteapi.RemoteApiOptions.)
