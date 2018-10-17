@@ -24,10 +24,18 @@
 
 (def extra-mime-types {"mf" "text/plain"})
 
-;;;TODO(alpeware): does only work in app engine
+;;;TODO(alpeware): query metadata server for default project
 (defn default-bucket []
-  (let [app-id-service (AppIdentityServiceFactory/getAppIdentityService)]
-    (.getDefaultGcsBucketName app-id-service)))
+  (or
+   (try
+     (let [app-id-service (AppIdentityServiceFactory/getAppIdentityService)]
+       (.getDefaultGcsBucketName app-id-service))
+     (catch Exception _ nil))
+   (:DEFAULT_GCS_BUCKET util/env)
+   (->> (buckets "alpeware-jaq-runtime")
+        :items
+        (first)
+        :name)))
 
 #_(
    (in-ns 'jaq.services.storage)
@@ -36,6 +44,8 @@
      #_(:DEFAULT_BUCKET util/env))
    (default-bucket)
 
+   (slurp "http://metadata.google.internal/computeMetadata/v1/project/project-id")
+   (slurp "http://metadata.google.internal/computeMetadata/v1")
    (get-file (default-bucket) "jaq-config.edn")
    (buckets "alpeware-jaq-runtime")
 

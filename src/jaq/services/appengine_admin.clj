@@ -133,19 +133,21 @@
    )
 
 (defn app-definition [file-vec
-                      {:keys [service version servlet env-vars]
+                      {:keys [service version servlet env-vars defaults]
                        :or {servlet "servlet"
                             env-vars {}}}]
   (let [dep (deployment file-vec)
-        defaults (if (= service :default)
-                   (app-defaults version servlet)
-                   (service-defaults version servlet))
+        defaults (merge
+                     (if (= service :default)
+                       (app-defaults version servlet)
+                       (service-defaults version servlet))
+                     defaults)
         handlers (app-handlers file-vec servlet)
         env-variables {"envVariables" env-vars}]
     (merge defaults dep handlers env-variables)))
 
 (defn deploy-app [{:keys [project-id service code-bucket code-prefix version servlet
-                          env-vars] :as params}]
+                          env-vars defaults] :as params}]
   (let [file-vec (get-files code-bucket code-prefix)
         app-def (app-definition file-vec params)]
     (deploy project-id service app-def)))

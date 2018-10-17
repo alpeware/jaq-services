@@ -51,3 +51,47 @@
         keys (if (vector? ks) ks [ks])
         m (.getAll ms keys)]
     (into {} (for [[k v] m] [k (read-str v)]))))
+
+#_(
+
+   *ns*
+   (in-ns 'jaq.services.memcache)
+
+   (-> (javax.cache.CacheManager/getInstance)
+       (clojure.reflect/reflect)
+       :members
+       )
+   javax.cache.CacheFactory
+   javax.cache.Caching
+
+   (-> (^com.google.apphosting.api.ApiProxy$Environment com.google.apphosting.api.ApiProxy/getCurrentEnvironment)
+       (clojure.reflect/reflect)
+       :members
+       )
+   (import 'com.google.apphosting.api.ApiProxy$Environment)
+
+   (-> com.google.apphosting.api.ApiProxy
+       (clojure.reflect/reflect)
+       :members
+       #_count)
+
+   (-> (com.google.appengine.api.memcache.MemcacheServicePb$MemcacheGetRequest/newBuilder)
+       (.addKey (com.google.appengine.api.memcache.AsyncMemcacheServiceImpl/makePbKey "foo")))
+
+   (-> (com.google.apphosting.api.ApiProxy/getDelegate)
+       (.makeAsyncCall (com.google.apphosting.api.ApiProxy/getCurrentEnvironment) "memcache" "Get"  nil)
+       )
+
+   (-> (com.google.appengine.api.memcache.MemcacheServiceFactory/getMemcacheService)
+       (.contains :foo))
+
+   (-> (com.google.appengine.api.memcache.MemcacheServiceFactory/getMemcacheService)
+       (.put :foo :bar))
+
+   (-> (com.google.appengine.api.memcache.MemcacheServiceFactory/getMemcacheService)
+       (.get :foo))
+
+
+   (-> (com.google.appengine.api.memcache.AsyncMemcacheServiceImpl. nil))
+
+   )
