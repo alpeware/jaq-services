@@ -108,7 +108,7 @@
 
 (defn contains-file? [file-vec file-name]
   (->> file-vec
-       (filer (fn [f _]
+       (filter (fn [f _]
                 (= f file-name)))
        (empty?)
        (not)))
@@ -128,12 +128,12 @@
                                  :uploadPathRegex "WEB-INF/classes/public/(.*)"
                                  :applicationReadable false}}
                   {:urlRegex "/.*"
-                   :script {:scriptPath servlet}}]])
-  {:handlers (concat (when (contains-file? file-vec index-file-path)
-                       (static-file "/" index-file-path public-folder-regex))
-                     (when (contains-file? file-vec favicon-file-path)
-                       (static-file "/" favicon-file-path public-folder-regex))
-                     handlers)})
+                   :script {:scriptPath servlet}}]]
+    {:handlers (concat (when (contains-file? file-vec index-file-path)
+                         (static-file "/" index-file-path public-folder-regex))
+                       (when (contains-file? file-vec favicon-file-path)
+                         (static-file "/" favicon-file-path public-folder-regex))
+                       handlers)}))
 
 #_(
    *ns*
