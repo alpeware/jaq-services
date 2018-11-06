@@ -108,7 +108,7 @@
 
 (defn contains-file? [file-vec file-name]
   (->> file-vec
-       (filter (fn [f _]
+       (filter (fn [[f _]]
                 (= f file-name)))
        (empty?)
        (not)))
