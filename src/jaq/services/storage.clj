@@ -24,20 +24,8 @@
 
 (def extra-mime-types {"mf" "text/plain"})
 
-;;;TODO(alpeware): query metadata server for default project
-(defn default-bucket []
-  (or
-   (try
-     (let [app-id-service (AppIdentityServiceFactory/getAppIdentityService)]
-       (.getDefaultGcsBucketName app-id-service))
-     (catch Exception _ nil))
-   (:DEFAULT_GCS_BUCKET util/env)
-   (->> (buckets "alpeware-jaq-runtime")
-        :items
-        (first)
-        :name)))
-
 #_(
+   *ns*
    (in-ns 'jaq.services.storage)
    (defn default-bucket []
      "alpeware-jaq-runtime.appspot.com"
@@ -54,6 +42,20 @@
 ;; buckets
 (defn buckets [project]
   (action :get [:b] {:query-params {"project" project}}))
+
+;;;TODO(alpeware): query metadata server for default project
+(defn default-bucket []
+  (or
+   (try
+     (let [app-id-service (AppIdentityServiceFactory/getAppIdentityService)]
+       (.getDefaultGcsBucketName app-id-service))
+     (catch Exception _ nil))
+   (:DEFAULT_GCS_BUCKET util/env)
+   (:DEFAULT_BUCKET util/env)
+   (->> (buckets "alpeware-jaq-runtime")
+        :items
+        (first)
+        :name)))
 
 (defn new [project-id bucket-name location storage-class]
   (action :post [:b] {:query-params {"project" project-id}

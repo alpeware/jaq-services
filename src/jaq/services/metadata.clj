@@ -34,7 +34,11 @@
                                                            :query-params {:recursive true}}))
 
 #_(
-   service-accounts/${this.serviceAccountEmail}/token
+   *ns*
+   (in-ns 'clojure.core)
+   (require jaq.services.metadata)
+   (in-ns 'jaq.services.metadata)
+   ;;service-accounts/${this.serviceAccountEmail}/token
 
    (->> (instance)
        :serviceAccounts
@@ -43,6 +47,12 @@
        (first)
        (token)
        )
+
+   (->> (instance)
+        :serviceAccounts
+        (vals)
+        #_(map :email)
+        #_(first))
 
    (attributes)
    (-> (project) :projectId)

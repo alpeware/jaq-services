@@ -106,21 +106,34 @@
    :basicScaling {:maxInstances 1}
    :instanceClass "B1"})
 
+(defn contains-file? [file-vec file-name]
+  (->> file-vec
+       (filer (fn [f _]
+                (= f file-name)))
+       (empty?)
+       (not)))
+
+(defn static-file [url-regex file-path path-regex]
+  {:urlRegex url-regex
+   :staticFiles {:path file-path
+                 :uploadPathRegex path-regex
+                 :applicationReadable false}})
+
 (defn app-handlers [file-vec servlet]
-  {:handlers [{:urlRegex "/"
-               :staticFiles {:path "WEB-INF/classes/public/index.html"
-                             :uploadPathRegex "WEB-INF/classes/public/(.*)"
-                             :applicationReadable false}}
-              {:urlRegex "/favicon.ico"
-               :staticFiles {:path "WEB-INF/classes/public/favicon.ico"
-                             :uploadPathRegex "WEB-INF/classes/public/(.*)"
-                             :applicationReadable false}}
-              {:urlRegex "/public/(.*)"
-               :staticFiles {:path "WEB-INF/classes/public/\\1"
-                             :uploadPathRegex "WEB-INF/classes/public/(.*)"
-                             :applicationReadable false}}
-              {:urlRegex "/.*"
-               :script {:scriptPath servlet}}]})
+  (let [index-file-path "WEB-INF/classes/public/index.html"
+        favicon-file-path "WEB-INF/classes/public/favicon.ico"
+        public-folder-regex "WEB-INF/classes/public/(.*)"
+        handlers [{:urlRegex "/public/(.*)"
+                   :staticFiles {:path "WEB-INF/classes/public/\\1"
+                                 :uploadPathRegex "WEB-INF/classes/public/(.*)"
+                                 :applicationReadable false}}
+                  {:urlRegex "/.*"
+                   :script {:scriptPath servlet}}]])
+  {:handlers (concat (when (contains-file? file-vec index-file-path)
+                       (static-file "/" index-file-path public-folder-regex))
+                     (when (contains-file? file-vec favicon-file-path)
+                       (static-file "/" favicon-file-path public-folder-regex))
+                     handlers)})
 
 #_(
    *ns*
@@ -138,10 +151,10 @@
                             env-vars {}}}]
   (let [dep (deployment file-vec)
         defaults (merge
-                     (if (= service :default)
-                       (app-defaults version servlet)
-                       (service-defaults version servlet))
-                     defaults)
+                  (if (= service :default)
+                    (app-defaults version servlet)
+                    (service-defaults version servlet))
+                  defaults)
         handlers (app-handlers file-vec servlet)
         env-variables {"envVariables" env-vars}]
     (merge defaults dep handlers env-variables)))

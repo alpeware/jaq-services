@@ -126,9 +126,11 @@
         (apply args))))
 
 #_(
+   (require 'jaq.services.util)
    (in-ns 'jaq.services.util)
    @credentials
 
+   (get-token)
    (-> env
        (merge {:DEFAULT_BUCKET (->> (jaq.services.storage/buckets "alpeware-jaq-runtime")
                                     :items

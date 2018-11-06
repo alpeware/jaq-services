@@ -53,8 +53,8 @@
    (defn defer [m & [{:keys [delay-ms]
                       :or {delay-ms 0}}]]
      (Thread/sleep delay-ms)
-     (defer-fn m)
-     #_(future (defer-fn m)))
+     #_(defer-fn m)
+     (future (defer-fn m)))
    )
 
 (defn pull-queue []

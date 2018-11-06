@@ -9,7 +9,7 @@
   :dependencies [[org.clojure/clojure "1.9.0"]
 
                  [com.google.appengine/appengine-api-1.0-sdk ~sdk-version]
-
+                 [com.google.auth/google-auth-library-oauth2-http "0.11.0"]
                  [org.clojure/data.json "0.2.6"]
                  [org.clojure/tools.logging "0.4.0"]
                  [clj-http-lite "0.3.0"]

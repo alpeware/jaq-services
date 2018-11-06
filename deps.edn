@@ -6,4 +6,5 @@
 
         clj-http-lite {:mvn/version "0.3.0"}
 
-        com.google.appengine/appengine-api-1.0-sdk {:mvn/version "1.9.65"}}}
+        com.google.appengine/appengine-api-1.0-sdk {:mvn/version "1.9.65"}
+        com.google.auth/google-auth-library-oauth2-http {:mvn/version "0.11.0"}}}
