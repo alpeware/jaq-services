@@ -12,6 +12,7 @@
    [jaq.services.deferred :refer [defer defer-fn]]
    [jaq.services.util :as util]))
 
+(def service-name "compute.googleapis.com")
 (def endpoint "https://www.googleapis.com")
 (def version "v1")
 (def default-endpoint [endpoint :compute version])
@@ -38,6 +39,26 @@
          next-token (:nextPageToken result)]
      (concat (:items result) (when next-token
                                (templates project-id (assoc params :pageToken next-token)))))))
+
+(defn zones [project-id & [{:keys [pageToken maxResults] :as params}]]
+  (lazy-seq
+   (let [result (action :get [:projects project-id :zones]
+                        {:query-params params})
+         next-token (:nextPageToken result)]
+     (concat (:items result) (when next-token
+                               (zones project-id (assoc params :pageToken next-token)))))))
+
+#_(
+   (zones "alpeware-jaq-runtime")
+   (def a *1)
+   (->> a
+        #_(take 1)
+        (map :region)
+        (distinct)
+        #_count
+        #_(first)
+        #_keys)
+   )
 
 (defn reset [project-id zone instance-name]
   (action :post [:projects project-id :zones zone :instances instance-name :reset]
@@ -128,6 +149,8 @@
 
 #_(
    *ns*
+   (in-ns 'clojure.core)
+   (require 'jaq.services.compute)
    (in-ns 'jaq.services.compute)
    ;; "projects/328831522370/zones/us-central1-c"
    (set-service-account "alpeware-wealth" "us-central1-c" "jaq-runtime-vm"

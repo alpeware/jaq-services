@@ -137,6 +137,13 @@
      (into-array [])))
    )
 
+(defn default-credentials []
+  (init-credentials google-client-id google-client-secret local-redirect-uri))
+
+#_(
+   (default-credentials)
+   )
+
 (defn local-credentials [path]
   (let [credentials (or (load-credentials path)
                         (init-credentials google-client-id google-client-secret local-redirect-uri))]
