@@ -49,6 +49,7 @@
                                (zones project-id (assoc params :pageToken next-token)))))))
 
 #_(
+   (in-ns 'jaq.services.compute)
    (zones "alpeware-jaq-runtime")
    (def a *1)
    (->> a
@@ -76,6 +77,12 @@
 (defn operation [project-id zone name]
   (action :get [:projects project-id :zones zone :operations name]))
 
+#_(
+   (defn operation [project-id zone name]
+     {:done true})
+
+   )
+
 (def default-startup-script "#!/bin/bash\n#\n# JAQ VM Startup Script\n#\n\n# install packages\napt-get update && apt-get install -y tmux htop openjdk-8-jdk-headless git rlwrap\n\n# install clojure\nif [ ! $(which clj) ]; then\n    echo \"Installing Clojure\"\n    curl https://download.clojure.org/install/linux-install-1.9.0.397.sh | bash -\nfi\n\n# add swap\nif [ ! -f /swapfile ]; then\n    echo \"Enabling swap\"\n    fallocate -l 4G /swapfile\n    chmod 600 /swapfile\n    mkswap /swapfile\n    swapon /swapfile\nfi")
 
 (defn create-instance [{:keys [project-id zone machine-type instance-name metadata
@@ -88,7 +95,7 @@
                                      :boot true
                                      :autoDelete true
                                      :deviceName instance-name
-                                     :initializeParams {:sourceImage "projects/debian-cloud/global/images/debian-9-stretch-v20181011"
+                                     :initializeParams {:sourceImage "projects/debian-cloud/global/images/debian-9-stretch-v20181113"
                                                         :diskType (->> [:projects project-id :zones zone :diskTypes :pd-standard]
                                                                        (map name)
                                                                        (string/join "/"))
@@ -109,7 +116,7 @@
                                          :autmoaticRestart true
                                          :nodeAffinities []}
                              scopes ["https://www.googleapis.com/auth/cloud-platform"]
-                             tags [:http-server]
+                             tags [:http-server :https-server]
                              description "JAQ runtime VM"
                              metadata {:startup-script default-startup-script
                                        :JAQ_REPL_TOKEN "foobarbaz"
@@ -159,6 +166,14 @@
                          "https://www.googleapis.com/auth/spreadsheets"])
 
    (instances "alpeware-wealth" "us-central1-c")
+   (-> (instances "alpeware-jaq-runtime" "us-central1-c")
+       (first)
+       :networkInterfaces
+       first
+       :accessConfigs
+       (first)
+       :natIP)
+
    (-> (instances "alpeware-wealth" "us-central1-c")
        (first)
        :networkInterfaces

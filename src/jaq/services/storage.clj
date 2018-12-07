@@ -17,6 +17,7 @@
     AppIdentityServiceFactory
     AppIdentityService]))
 
+(def service-name "storage-api.googleapis.com")
 (def endpoint "https://www.googleapis.com")
 (def version "v1")
 (def default-endpoint [endpoint :storage version])

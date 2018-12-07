@@ -46,3 +46,8 @@
 
 (defn operation [name]
   (action :get [name]))
+
+#_(
+   (defn operation [name]
+         {:done true})
+   )

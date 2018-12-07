@@ -23,6 +23,7 @@
        (auth/get-valid-credentials)
        (reset! credentials)
        :access-token))
+(def ^:dynamic *token-fn* get-token)
 ;;;
 
 (defn substitute [path base]
@@ -56,7 +57,7 @@
   "
   [base verb path & [opts raw]]
   (let [url (make-url (substitute path base))
-        headers (merge {"Authorization" (str "Bearer " (get-token))} (:headers opts))
+        headers (merge {"Authorization" (str "Bearer " (*token-fn*))} (:headers opts))
         req (merge {:method verb
                     :url url
                     :throw-exceptions *throw-exceptions*
@@ -65,22 +66,25 @@
     (get-response (http/request req) raw)))
 
 ;;;;;;;;;;;;;
+#_(
+   (*token-fn*)
+   )
 
-(defn- property-or [property alternative]
+#_(defn- property-or [property alternative]
   (or (.get property) alternative))
 
-(defn environment []
+#_(defn environment []
   (property-or com.google.appengine.api.utils.SystemProperty/environment "Development"))
 
-(def prod?
+#_(def prod?
   (not= (environment) "Development"))
 
-(def dev? (not prod?))
+#_(def dev? (not prod?))
 
-(defn application-id []
+#_(defn application-id []
   (property-or com.google.appengine.api.utils.SystemProperty/applicationId "localhost"))
 
-(defn sdk-version []
+#_(defn sdk-version []
   (property-or com.google.appengine.api.utils.SystemProperty/version "Google App Engine/1.x.x"))
 
 (def env

@@ -7,7 +7,6 @@
    [clojure.walk :as walk]
    [clojure.string :as string]
    [clj-http.lite.client :as http]
-   [ring.util.mime-type :refer [ext-mime-type]]
    [jaq.services.deferred :refer [defer defer-fn]]
    [jaq.services.management :as management]
    [jaq.services.util :as util]))

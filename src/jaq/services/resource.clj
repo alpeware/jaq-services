@@ -7,6 +7,7 @@
    [clojure.string :as string]
    [jaq.services.util :as util]))
 
+(def service-name "cloudresourcemanager.googleapis.com")
 (def endpoint "https://cloudresourcemanager.googleapis.com")
 (def version "v1")
 (def default-endpoint [endpoint version])
@@ -28,3 +29,8 @@
 
 (defn operation [name]
   (action :get [name]))
+
+#_(
+   (defn operation [name]
+     {:done true})
+   )

@@ -109,11 +109,14 @@
     (valid? credentials) credentials
     (:refresh-token credentials) (refresh-token credentials)
     :else (or (try
-                (->> (com.google.appengine.api.appidentity.AppIdentityServiceFactory/getAppIdentityService)
-                       ((fn [e] (.getAccessToken e @cloud-scopes)))
-                       ((fn [e]
-                          {:access-token (.getAccessToken e)
-                           :expires-in (-> e (.getExpirationTime) (.getTime))})))
+                (->> (clojure.lang.Reflector/invokeStaticMethod
+                      (Class/forName "com.google.appengine.api.appidentity.AppIdentityServiceFactory")
+                      "getAppIdentityService"
+                      (into-array []))
+                     ((fn [e] (.getAccessToken e @cloud-scopes)))
+                     ((fn [e]
+                        {:access-token (.getAccessToken e)
+                         :expires-in (-> e (.getExpirationTime) (.getTime))})))
                 (catch Exception _ nil))
               (try
                 (->> (clojure.lang.Reflector/invokeStaticMethod

@@ -55,6 +55,7 @@
      (Thread/sleep delay-ms)
      #_(defer-fn m)
      (future (defer-fn m)))
+
    )
 
 (defn pull-queue []
@@ -85,6 +86,10 @@
 
    (defn add [payload tag]
      (swap! pq update tag (fn [e] (-> (or e []) (conj payload)))))
+
+   (defn add [payload tag]
+     (prn payload)
+     #_(swap! pq update tag (fn [e] (-> (or e []) (conj payload)))))
 
    (add :payload :tag)
 
