@@ -1,17 +1,9 @@
-(ns jaq.services.metadata
+(ns jaq.gce.metadata
   (:refer-clojure :exclude [list])
   (:require
-   [clojure.data.json :as json]
-   [clojure.edn :as edn]
-   [clojure.tools.logging :as log]
-   [clojure.java.io :as io]
-   [clojure.walk :as walk]
-   [clojure.string :as string]
-   [clj-http.lite.client :as http]
-   [ring.util.mime-type :refer [ext-mime-type]]
-   [jaq.services.deferred :refer [defer defer-fn]]
    [jaq.services.util :as util]))
 
+(def service-name )
 (def endpoint "http://metadata.google.internal")
 (def version "v1")
 (def default-endpoint [endpoint :computeMetadata version])

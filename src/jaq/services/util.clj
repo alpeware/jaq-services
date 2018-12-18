@@ -67,38 +67,9 @@
 
 ;;;;;;;;;;;;;
 #_(
+   (in-ns 'jaq.services.util)
    (*token-fn*)
    )
-
-#_(defn- property-or [property alternative]
-  (or (.get property) alternative))
-
-#_(defn environment []
-  (property-or com.google.appengine.api.utils.SystemProperty/environment "Development"))
-
-#_(def prod?
-  (not= (environment) "Development"))
-
-#_(def dev? (not prod?))
-
-#_(defn application-id []
-  (property-or com.google.appengine.api.utils.SystemProperty/applicationId "localhost"))
-
-#_(defn sdk-version []
-  (property-or com.google.appengine.api.utils.SystemProperty/version "Google App Engine/1.x.x"))
-
-(def env
-  (->> (System/getenv)
-       (into {})
-       (clojure.walk/keywordize-keys)))
-
-#_(defn remote! [host port]
-  (try
-    (-> (com.google.appengine.tools.remoteapi.RemoteApiInstaller.)
-        (.install (-> (com.google.appengine.tools.remoteapi.RemoteApiOptions.)
-                      (.server host port)
-                      (.useDevelopmentServerCredential))))
-    (catch Exception _ nil)))
 
 (defn repl-server []
   (clojure.core.server/start-server

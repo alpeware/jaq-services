@@ -1,4 +1,4 @@
-(ns jaq.services.datastore
+(ns jaq.gae.datastore
   (:require
    [clojure.data.json :as json]
    [clojure.tools.logging :as log])

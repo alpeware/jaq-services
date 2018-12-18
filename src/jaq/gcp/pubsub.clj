@@ -1,14 +1,7 @@
-(ns jaq.services.pubsub
+(ns jaq.gcp.pubsub
   (:require
    [clojure.data.json :as json]
    [clojure.edn :as edn]
-   [clojure.tools.logging :as log]
-   [clojure.java.io :as io]
-   [clojure.walk :as walk]
-   [clojure.string :as string]
-   [clj-http.lite.client :as http]
-   [jaq.services.deferred :refer [defer defer-fn]]
-   [jaq.services.management :as management]
    [jaq.services.util :as util]))
 
 (def service-name "pubsub.googleapis.com")
@@ -17,9 +10,6 @@
 (def default-endpoint [endpoint version])
 (def action (partial util/action default-endpoint))
 
-(defn enable [project-id]
-  (management/enable "pubsub.googleapis.com" project-id))
-
 (defn create-topic [project-id topic & [labels]]
   (action :put [:projects project-id :topics topic]
           {:content-type :json
@@ -27,13 +17,16 @@
 
 (defn topics [project-id & [{:keys [pageToken pageSize] :as params}]]
   (lazy-seq
-   (let [{:keys [topics nextPageToken error]} (action :get [:projects project-id :topics]
-                                                      {:query-params params})]
-     (if error
-       error
-       (concat topics
-               (when nextPageToken
-                 (topics project-id (assoc params :pageToken nextPageToken))))))))
+   (let [{:keys [nextPageToken error]
+          topic-list :topics} (action
+                               :get
+                               [:projects project-id :topics]
+                               {:query-params params})]
+     (or
+      error
+      (concat topic-list
+              (when nextPageToken
+                (topics project-id (assoc params :pageToken nextPageToken))))))))
 
 (defn publish [project-id topic messages]
   (action :post [:projects project-id :topics (str (name topic) ":publish")]
@@ -53,11 +46,13 @@
 
 (defn subscriptions [project-id & [{:keys [pageSize pageToken] :as params}]]
   (lazy-seq
-   (let [{:keys [subscriptions nextPageToken error]}
-         (action :get [:projects project-id :subscriptions])]
-     (if error
+   (let [{:keys [subscriptions nextPageToken error]
+          subscription-list :subscriptions} (action
+                                             :get
+                                             [:projects project-id :subscriptions])]
+     (or
        error
-       (concat subscriptions
+       (concat subscription-list
                (when nextPageToken
                  (subscriptions project-id (assoc params :pageToken nextPageToken))))))))
 
@@ -93,7 +88,7 @@
 #_(
 
    *ns*
-   (in-ns 'jaq.services.pubsub)
+   (in-ns 'jaq.gcp.pubsub)
    (create-topic "alpeware-jaq-runtime" :service)
    (topics "alpeware-jaq-runtime")
    (publish "alpeware-jaq-runtime" :service [{:foo :bar}])
@@ -106,8 +101,4 @@
 
    (let [{:keys [foo bar] :or {foo :foo} :as p} {:bar :bar}]
      foo)
-
-
-
-
    )

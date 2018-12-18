@@ -1,15 +1,9 @@
-(ns jaq.services.compute
+(ns jaq.gcp.compute
   (:refer-clojure :exclude [list])
   (:require
    [clojure.data.json :as json]
-   [clojure.edn :as edn]
-   [clojure.tools.logging :as log]
-   [clojure.java.io :as io]
    [clojure.walk :as walk]
    [clojure.string :as string]
-   [clj-http.lite.client :as http]
-   [ring.util.mime-type :refer [ext-mime-type]]
-   [jaq.services.deferred :refer [defer defer-fn]]
    [jaq.services.util :as util]))
 
 (def service-name "compute.googleapis.com")
@@ -26,27 +20,39 @@
 
 (defn instances [project-id zone & [{:keys [pageToken maxResults] :as params}]]
   (lazy-seq
-   (let [result (action :get [:projects project-id :zones zone :instances]
-                        {:query-params params})
-         next-token (:nextPageToken result)]
-     (concat (:items result) (when next-token
-                               (instances project-id zone (assoc params :pageToken next-token)))))))
+   (let [{:keys [items nextPageToken error]} (action
+                                              :get
+                                              [:projects project-id
+                                               :zones zone :instances]
+                                              {:query-params params})]
+     (or
+      error
+      (concat items (when nextPageToken
+                      (instances project-id zone
+                                 (assoc params :pageToken nextPageToken))))))))
 
 (defn templates [project-id & [{:keys [pageToken maxResults] :as params}]]
   (lazy-seq
-   (let [result (action :get [:projects project-id :global :instanceTemplates]
-                        {:query-params params})
-         next-token (:nextPageToken result)]
-     (concat (:items result) (when next-token
-                               (templates project-id (assoc params :pageToken next-token)))))))
+   (let [{:keys [items nextPageToken error]} (action :get
+                                                     [:projects project-id
+                                                      :global :instanceTemplates]
+                                                     {:query-params params})]
+     (or
+      error
+      (concat items (when nextPageToken
+                      (templates project-id
+                                 (assoc params :pageToken nextPageToken))))))))
 
 (defn zones [project-id & [{:keys [pageToken maxResults] :as params}]]
   (lazy-seq
-   (let [result (action :get [:projects project-id :zones]
-                        {:query-params params})
-         next-token (:nextPageToken result)]
-     (concat (:items result) (when next-token
-                               (zones project-id (assoc params :pageToken next-token)))))))
+   (let [{:keys [items nextPageToken error]} (action :get
+                                                     [:projects project-id :zones]
+                                                     {:query-params params})]
+     (or
+       error
+       (concat items (when nextPageToken
+                       (zones project-id
+                              (assoc params :pageToken nextPageToken))))))))
 
 #_(
    (in-ns 'jaq.services.compute)
@@ -95,7 +101,7 @@
                                      :boot true
                                      :autoDelete true
                                      :deviceName instance-name
-                                     :initializeParams {:sourceImage "projects/debian-cloud/global/images/debian-9-stretch-v20181113"
+                                     :initializeParams {:sourceImage "projects/debian-cloud/global/images/debian-9-stretch-v20181210"
                                                         :diskType (->> [:projects project-id :zones zone :diskTypes :pd-standard]
                                                                        (map name)
                                                                        (string/join "/"))
@@ -165,7 +171,7 @@
                         ["https://www.googleapis.com/auth/cloud-platform"
                          "https://www.googleapis.com/auth/spreadsheets"])
 
-   (instances "alpeware-wealth" "us-central1-c")
+   (instances "alpeware-jaq-runtime" "us-central1-c")
    (-> (instances "alpeware-jaq-runtime" "us-central1-c")
        (first)
        :networkInterfaces

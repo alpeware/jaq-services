@@ -1,14 +1,12 @@
-(ns jaq.services.iam
+(ns jaq.gcp.iam
   (:refer-clojure :exclude [list get])
   (:require
    [clojure.data.json :as json]
-   [clojure.tools.logging :as log]
-   [clj-http.lite.client :as http]
    [clojure.string :as string]
    [jaq.services.util :as util]))
 
 (def service-name "iam.googleapis.com")
-(def endpoint "https://iam.googleapis.com")
+(def endpoint (str "https://" service-name))
 (def version "v1")
 (def default-endpoint [endpoint version])
 (def action (partial util/action default-endpoint))
@@ -18,12 +16,15 @@
 
 (defn service-accounts [project-id & [{:keys [pageToken maxResults] :as params}]]
   (lazy-seq
-   (let [{:keys [accounts nextPageToken error]} (action :get [:projects project-id :serviceAccounts]
+   (let [{:keys [accounts nextPageToken error]} (action :get
+                                                        [:projects project-id
+                                                         :serviceAccounts]
                                                         {:query-params params})]
-     (if error
-       error
-       (concat accounts (when nextPageToken
-                          (service-accounts project-id (assoc params :pageToken nextPageToken))))))))
+     (or
+      error
+      (concat accounts (when nextPageToken
+                         (service-accounts project-id
+                                           (assoc params :pageToken nextPageToken))))))))
 
 #_(
 

@@ -1,4 +1,4 @@
-(ns jaq.services.appengine-admin
+(ns jaq.gcp.appengine-admin
   (:refer-clojure :exclude [list])
   (:require
    [clojure.data.json :as json]
@@ -7,10 +7,11 @@
    [clojure.java.io :as io]
    [clj-http.lite.client :as http]
    [clojure.string :as string]
-   [jaq.services.storage :as storage]
+   [jaq.gcp.storage :as storage]
    [jaq.services.util :as util]))
 
-(def api-endpoint "https://appengine.googleapis.com")
+(def service-name "appengine.googleapis.com")
+(def api-endpoint (str "https://" service-name))
 (def api-version "v1beta")
 (def default-endpoint [api-endpoint api-version])
 (def action (partial util/action default-endpoint))

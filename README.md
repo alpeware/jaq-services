@@ -1,14 +1,14 @@
 # JAQ Services
 
-A Clojure library designed to make using Google App Engine and Google Cloud
-Platform usage idiomatic.
+A library to bring Clojure to the Google Cloud Platform.
 
 ## Installation
 
-Available on Clojars:
+Use in ```deps.edn``` -
 
 ```
-[com.alpeware/jaq-services "0.1.0-SNAPSHOT"]
+{com.alpeware/jaq-services {:git/url "https://github.com/alpeware/jaq-services"
+                            :sha "LATEST SHA"}}
 ```
 
 ## Status
@@ -17,21 +17,36 @@ Alpha quality with some API changes expected.
 
 ## Services
 
-### App Engine
-- Datastore
-- Cloud Storage
-- Memcache
-- Task Queues
+``` bash
+src/
+└── jaq
+    ├── gae
+    │   ├── datastore.clj
+    │   ├── deferred.clj
+    │   └── memcache.clj
+    ├── gce
+    │   └── metadata.clj
+    ├── gcp
+    │   ├── appengine_admin.clj
+    │   ├── billing.clj
+    │   ├── compute.clj
+    │   ├── iam.clj
+    │   ├── management.clj
+    │   ├── pubsub.clj
+    │   ├── resource.clj
+    │   ├── script.clj
+    │   ├── storage.clj
+    │   └── tasks.clj
+    └── services
+        ├── auth.clj
+        ├── deferred.clj
+        ├── env.clj
+        └── util.clj
 
-### Cloud APIs
-- App Engine Admin
-- OAuth
-- Resource Manager
-- Service Management
+```
 
 ## Runtime Dependencies
 
-See profile ```dev``` in ```project.clj``` -
 
 ``` clojure
   :profiles {:dev {:dependencies [[com.google.appengine/appengine-java-sdk ~sdk-version :extension "zip"]

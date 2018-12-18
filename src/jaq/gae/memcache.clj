@@ -1,4 +1,4 @@
-(ns jaq.services.memcache
+(ns jaq.gae.memcache
   (:refer-clojure :exclude [push pop peek read])
   (:require
    [cognitect.transit :refer [writer write reader read]])

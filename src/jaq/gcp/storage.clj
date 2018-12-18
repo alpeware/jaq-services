@@ -1,15 +1,15 @@
-(ns jaq.services.storage
+(ns jaq.gcp.storage
   (:refer-clojure :exclude [list])
   (:require
    [clojure.data.json :as json]
    [clojure.edn :as edn]
-   [clojure.tools.logging :as log]
    [clojure.java.io :as io]
    [clojure.walk :as walk]
    [clojure.string :as string]
    [clj-http.lite.client :as http]
    [ring.util.mime-type :refer [ext-mime-type]]
    [jaq.services.deferred :refer [defer defer-fn]]
+   [jaq.services.env :as env]
    [jaq.services.util :as util])
   (:import
    [java.io File]
@@ -27,7 +27,7 @@
 
 #_(
    *ns*
-   (in-ns 'jaq.services.storage)
+   (in-ns 'jaq.gcp.storage)
    (defn default-bucket []
      "alpeware-jaq-runtime.appspot.com"
      #_(:DEFAULT_BUCKET util/env))
@@ -36,40 +36,54 @@
    (slurp "http://metadata.google.internal/computeMetadata/v1/project/project-id")
    (slurp "http://metadata.google.internal/computeMetadata/v1")
    (get-file (default-bucket) "jaq-config.edn")
-   (buckets "alpeware-jaq-runtime")
+   (->> (buckets "alpeware-jaq-runtime" {:prefix "us"
+                                         :projection "full"})
+        #_(map :name))
 
    )
 
 ;; buckets
-(defn buckets [project]
-  (action :get [:b] {:query-params {"project" project}}))
+(defn buckets [project-id & [{:keys [pageToken maxResults prefix
+                                     projection userProject] :as params}]]
+  (lazy-seq
+   (let [{:keys [items nextPageToken error]} (action
+                                              :get [:b]
+                                              {:query-params (merge
+                                                              {"project" project-id}
+                                                              params)})]
+     (or
+      error
+      (concat items
+              (when nextPageToken
+                (buckets project-id (assoc params :pageToken nextPageToken))))))))
 
-;;;TODO(alpeware): query metadata server for default project
+;; TODO: query metadata server for default project
+;; TODO: move to services?
 (defn default-bucket []
   (or
    (try
      (let [app-id-service (AppIdentityServiceFactory/getAppIdentityService)]
        (.getDefaultGcsBucketName app-id-service))
      (catch Exception _ nil))
-   (:DEFAULT_GCS_BUCKET util/env)
-   (:DEFAULT_BUCKET util/env)
+   (:DEFAULT_GCS_BUCKET env/env)
+   (:DEFAULT_BUCKET env/env)
    (->> (buckets "alpeware-jaq-runtime")
         :items
         (first)
         :name)))
 
-(defn new [project-id bucket-name location storage-class]
+(defn new [{:keys [project-id bucket location storage-class]}]
   (action :post [:b] {:query-params {"project" project-id}
                       :content-type :json
-                      :body (json/write-str {"name" bucket-name
+                      :body (json/write-str {"name" bucket
                                              "location" location
                                              "storageClass" storage-class})}))
 
-(defn delete [project-id bucket-name]
-  (action :delete [:b bucket-name] {:query-params {"project" project-id}}))
+(defn delete [project-id bucket]
+  (action :delete [:b bucket] {:query-params {"project" project-id}}))
 
 ;; objects
-(defn put-simple [bucket file-name content-type content]
+(defn put-simple [{:keys [bucket file-name content-type content]}]
   (util/action [endpoint :upload :storage version]
                :post [:b bucket :o]
                {:content-type content-type
@@ -77,7 +91,7 @@
                                :name file-name}
                 :body content}))
 
-(defn create-session-uri [bucket path base-dir prefix]
+(defn create-session-uri [{:keys [bucket path base-dir prefix]}]
   (let [file (io/file path)
         content-length (-> file .length str)
         dir base-dir ;; (.getParent file)
@@ -97,7 +111,7 @@
      walk/keywordize-keys
      :location)))
 
-(defn upload-chunk [session-uri path file-size index chunk-size]
+(defn upload-chunk [{:keys [session-uri path file-size index chunk-size]}]
   (with-open [f (java.io.RandomAccessFile. path "r")]
     (let [buffer (byte-array chunk-size)
           _ (.seek f index)
@@ -116,10 +130,11 @@
                 (walk/keywordize-keys))]
       resp)))
 
+;; TODO: handle vm vs. app engine differences somewhere
 (defmethod defer-fn ::upload [{:keys [session-uri path file-size index chunk-size
                                       callback-fn callback-args] :as params}]
-  (let [resp (upload-chunk session-uri path file-size index chunk-size)
-        offset (-> resp :headers :range (or "-0") (string/split #"-") last edn/read-string inc)
+  (let [resp (upload-chunk params)
+        offset (-> resp :headers :range (or "-0") (string/split #"-") (last) (edn/read-string) (inc))
         status (:status resp)]
     (cond
       (= status 200) (let [response (-> resp :body (json/read-str))
@@ -128,8 +143,8 @@
       (= status 308) (defer (merge params {:fn ::upload :index offset}))
       :else (throw (IllegalStateException. (str "Re-trying chunk upload" index path))))))
 
-(defn put-large [bucket path base-dir prefix & [{:keys [callback args]}]]
-  (let [session-uri (create-session-uri bucket path base-dir prefix)
+(defn put-large [{:keys [bucket path base-dir prefix callback args] :as params}]
+  (let [session-uri (create-session-uri params)
         chunk-size (* 256 1024)
         file-size (-> (io/file path) .length)
         chunks (-> (/ file-size 100) int inc)
@@ -138,16 +153,15 @@
             :chunk-size chunk-size :callback-fn callback-fn :callback-args args})
     path))
 
-(defn list [bucket & [{:keys [prefix pageToken maxResults] :as params}]]
-  (action :get [:b bucket :o] {:query-params params}))
-
 (defn objects [bucket & [{:keys [prefix pageToken maxResults] :as params}]]
   (lazy-seq
-   (let [files (list bucket params)
-         next-token (:nextPageToken files)
-         items (:items files)]
-     (concat items (when next-token
-                     (objects bucket (assoc params :pageToken next-token)))))))
+   (let [{:keys [items nextPageToken error]} (action :get
+                                                     [:b bucket :o]
+                                                     {:query-params params})]
+     (or
+      error
+      (concat items (when nextPageToken
+                      (objects bucket (assoc params :pageToken nextPageToken))))))))
 
 (defn get-file [bucket file-name]
   (let [file-path (util/url-encode file-name)]

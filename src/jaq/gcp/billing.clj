@@ -1,8 +1,8 @@
-(ns jaq.services.billing
+(ns jaq.gcp.billing
   (:require
    [clojure.tools.logging :as log]
    [clojure.string :as string]
-   [jaq.services.management :as management]
+   [jaq.gcp.management :as management]
    [jaq.services.util :as util]))
 
 (def service-name "cloudbilling.googleapis.com")
@@ -18,7 +18,7 @@
   (lazy-seq
    (let [{:keys [billingAccounts nextPageToken error]} (action :get [:billingAccounts]
                                                       {:query-params params})]
-     (if error
+     (or
        error
        (concat billingAccounts
                (when nextPageToken

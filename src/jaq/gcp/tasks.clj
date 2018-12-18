@@ -1,34 +1,43 @@
-(ns jaq.services.tasks
+(ns jaq.gcp.tasks
   (:require
    [clojure.data.json :as json]
-   [clojure.edn :as edn]
-   [clojure.tools.logging :as log]
-   [clojure.java.io :as io]
-   [clojure.walk :as walk]
    [clojure.string :as string]
-   [clj-http.lite.client :as http]
-   [ring.util.mime-type :refer [ext-mime-type]]
-   [jaq.services.deferred :refer [defer defer-fn]]
    [jaq.services.util :as util]))
 
-(def endpoint "https://cloudtasks.googleapis.com")
+(def service-name "cloudtasks.googleapis.com")
+(def endpoint (str "https://" service-name))
 (def version "v2beta2")
 (def default-endpoint [endpoint version])
 (def action (partial util/action default-endpoint))
 
-(defn locations [project-id]
-  (action :get [:projects project-id :locations]))
+(defn locations [project-id & [{:keys [pageToken pageSize] :as params}]]
+  (lazy-seq
+   (let [{:keys [nextPageToken error]
+          location-list :locations}] (action
+                                      :get
+                                      [:projects project-id :locations])
+        (or
+         error
+         (concat location-list
+                 (when nextPageToken
+                   (locations (assoc params :pageToken nextPageToken))))))))
 
 (defn location [project-id location-id]
   (action :get [:projects project-id :locations location-id]))
 
 (defn queues [project-id location-id & [{:keys [pageToken pageSize] :as params}]]
   (lazy-seq
-   (let [result (action :get [:projects project-id :locations location-id :queues]
-                        {:query-params params})
-         next-token (:nextPageToken result)]
-     (concat (:queues result) (when next-token
-                                (queues project-id location-id (assoc params :pageToken next-token)))))))
+   (let [{:keys [nextPageToken error]
+          queue-list :queues} (action
+                               :get
+                               [:projects project-id :locations
+                                location-id :queues]
+                               {:query-params params})]
+     (or
+      error
+      (concat queue-list
+              (when nextPageToken
+                (queues project-id location-id (assoc params :pageToken nextPageToken))))))))
 
 (defn queue [project-id location-id queue-id]
   (action :get [:projects project-id :locations location-id :queues queue-id]))
@@ -50,16 +59,22 @@
           {:content-type :json
            :body (json/write-str {:name (->> [:projects project-id :locations location-id :queues queue-name]
                                              (map name)
-                                             (clojure.string/join "/"))
+                                             (string/join "/"))
                                   :pullTarget {}})}))
 
 (defn tasks [project-id location-id queue-id & [{:keys [pageToken pageSize] :as params}]]
   (lazy-seq
-   (let [result (action :get [:projects project-id :locations location-id :queues queue-id :tasks]
-                        {:query-params params})
-         next-token (:nextPageToken result)]
-     (concat (:tasks result) (when next-token
-                                (tasks project-id location-id queue-id (assoc params :pageToken next-token)))))))
+   (let [{:keys [nextPageToken error]
+          task-list :tasks} (action
+                             :get
+                             [:projects project-id :locations location-id
+                              :queues queue-id :tasks]
+                             {:query-params params})]
+     (or
+      error
+      (concat task-list
+              (when nextPageToken
+                (tasks project-id location-id queue-id (assoc params :pageToken nextPageToken))))))))
 
 
 
