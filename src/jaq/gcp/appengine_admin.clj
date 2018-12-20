@@ -138,7 +138,8 @@
 
 #_(
    *ns*
-   (in-ns 'jaq.services.appengine-admin)
+   (require 'jaq.gcp.appengine-admin)
+   (in-ns 'jaq.gcp.appengine-admin)
 
    (let [code-bucket "staging.alpeware-jaq-runtime.appspot.com"
          code-prefix "apps/v33"]

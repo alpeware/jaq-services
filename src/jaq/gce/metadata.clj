@@ -28,8 +28,8 @@
 #_(
    *ns*
    (in-ns 'clojure.core)
-   (require jaq.services.metadata)
-   (in-ns 'jaq.services.metadata)
+   (require 'jaq.gce.metadata)
+   (in-ns 'jaq.gce.metadata)
    ;;service-accounts/${this.serviceAccountEmail}/token
 
    (->> (instance)

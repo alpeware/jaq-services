@@ -205,7 +205,8 @@
 
 (defn upload-local [{:keys [session-uri path file-size start-index chunk-size] :as params}]
   (loop [index start-index]
-    (let [resp (upload-chunk session-uri path file-size index chunk-size)
+    (let [resp (upload-chunk {:session-uri session-uri :path path :file-size file-size
+                              :index index :chunk-size chunk-size})
           offset (-> resp :headers :range (or "-0") (string/split #"-") last edn/read-string inc)
           status (:status resp)]
       (cond
@@ -213,11 +214,14 @@
         (= status 308) (recur offset)
         :else (throw (IllegalStateException. (str "Re-trying chunk upload" index path)))))))
 
-(defn put-local [bucket path base-dir prefix]
-  (let [session-uri (create-session-uri bucket path base-dir prefix)
+(defn put-local [{:keys [bucket path base-dir prefix]}]
+  (let [session-uri (create-session-uri {:bucket bucket :path path
+                                         :base-dir base-dir :prefix prefix})
         chunk-size (* 256 1024)
         file-size (-> (io/file path) .length)
-        chunks (-> (/ file-size 100) int inc)]
+        chunks (-> (/ file-size 100) int inc)
+        content-type (or (ext-mime-type path extra-mime-types) "application/octet-stream")
+        file-name (string/replace-first path base-dir prefix)]
     (println "Uploading" path)
     (upload-local {:session-uri session-uri :path path :file-size file-size :start-index 0
                    :chunk-size chunk-size})
@@ -229,5 +233,10 @@
     (->> (file-seq (io/file dir))
          (filter #(.isFile %))
          (pmap (fn [f]
-                 (put-local bucket (.getPath f) dir prefix)))
+                 (put-local {:bucket bucket :path (.getPath f)
+                             :base-dir dir :prefix prefix})))
          (doall))))
+
+#_(
+   (in-ns 'jaq.gcp.storage)
+   )
