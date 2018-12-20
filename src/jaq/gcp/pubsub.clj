@@ -56,6 +56,9 @@
                (when nextPageToken
                  (subscriptions project-id (assoc params :pageToken nextPageToken))))))))
 
+(defn remove-subscriber [project-id subscriber-id]
+  (action :delete [:projects project-id :subscriptions subscriber-id]))
+
 (defn ack [project-id subscriber-id ackIds]
   (action :post [:projects project-id :subscriptions (str subscriber-id ":acknowledge")]
           {:content-type :json
@@ -69,18 +72,21 @@
            :body (json/write-str {:returnImmediately returnImmediately
                                   :maxMessages maxMessages})}))
 
+(defn mapify [e]
+  (let [{:keys [ackId subscription message]} e
+        {:keys [data messageId publishTime]} message]
+    (-> data
+        (util/decode)
+        (edn/read-string)
+        (merge {:pubsub/ackId ackId
+                :pubsub/subscription subscription
+                :pubsub/messageId messageId
+                :pubsub/publishTime publishTime}))))
+
 (defn pack [project-id subscriber-id]
   (->> (pull project-id subscriber-id)
        :receivedMessages
-       (map (fn [e]
-              (let [{:keys [ackId message]} e
-                    {:keys [data messageId publishTime]} message]
-                (-> data
-                    (util/decode)
-                    (edn/read-string)
-                    (merge {:pubsub/ackId ackId
-                            :pubsub/messageId messageId
-                            :pubsub/publishTime publishTime})))))
+       (map mapify)
        ((fn [e]
           (ack project-id subscriber-id (->> e (map :pubsub/ackId)))
           e))))
